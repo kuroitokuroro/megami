@@ -269,7 +269,11 @@ if (!permission) {
 
       try {
         const content = await file.text();
-        await saveFileToFolder(backupFileName, content);
+        const savedFileName =
+  await saveFileToFolder(
+    backupFileName,
+    content,
+  );
 
         addHistory({
           diaryText,
@@ -284,7 +288,10 @@ if (!permission) {
         restoreSavedFolder();
         renderHistory();
 
-        alert("ファイルを捧げました。");
+        alert(
+  "ファイルを捧げました。\n\n" +
+  savedFileName,
+);
       } catch (error) {
         alert("ファイルの保存に失敗しました。");
         console.error(error);
@@ -292,14 +299,36 @@ if (!permission) {
     }
 
     async function saveFileToFolder(fileName, content) {
-      const fileHandle = await directoryHandle.getFileHandle(fileName, {
-        create: true,
-      });
+  let targetFileName = fileName;
+  let counter = 2;
 
-      const writable = await fileHandle.createWritable();
-      await writable.write(content);
-      await writable.close();
+  while (await fileExists(targetFileName)) {
+    const dotIndex = fileName.lastIndexOf(".");
+
+    if (dotIndex === -1) {
+      targetFileName = `${fileName}_${counter}`;
+    } else {
+      const name = fileName.slice(0, dotIndex);
+      const ext = fileName.slice(dotIndex);
+
+      targetFileName = `${name}_${counter}${ext}`;
     }
+
+    counter++;
+  }
+
+  const fileHandle = await directoryHandle.getFileHandle(
+    targetFileName,
+    { create: true },
+  );
+
+  const writable = await fileHandle.createWritable();
+
+  await writable.write(content);
+  await writable.close();
+
+  return targetFileName;
+}
 
     function createBackupFileName(originalName, diaryText, date) {
       const safeDiaryText = diaryText.replace(/[\\/:*?"<>|]/g, "");
@@ -469,6 +498,16 @@ async function loadDirectoryHandle() {
       reject(request.error);
     };
   });
+}
+
+async function fileExists(fileName) {
+  try {
+    await directoryHandle.getFileHandle(fileName);
+
+    return true;
+  } catch {
+    return false;
+  }
 }
   </script>
 </body>
