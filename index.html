@@ -1,9 +1,12 @@
 <!doctype html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>開発サポートめがみ</title>
+  <link rel="icon" type="image/jpeg" href="favicon.jpg" />
+  <link rel="apple-touch-icon" href="favicon.jpg" />
 
   <style>
     body {
@@ -160,12 +163,7 @@
       </div>
 
       <label for="diaryInput">何を開発する？</label>
-      <input
-        id="diaryInput"
-        type="text"
-        maxlength="20"
-        placeholder="例：習慣表示修正"
-      />
+      <input id="diaryInput" type="text" maxlength="20" placeholder="例：習慣表示修正" />
 
       <button id="submitButton" class="submit-button" type="button">
         ファイルを捧げる
@@ -205,20 +203,20 @@
     renderHistory();
 
     async function selectFolder() {
-  if (!window.showDirectoryPicker) {
-    alert(
-      "このブラウザでは保存先フォルダの選択に対応していません。\n" +
-      "Chrome または Edge で開いてください。"
-    );
-    return;
-  }
+      if (!window.showDirectoryPicker) {
+        alert(
+          "このブラウザでは保存先フォルダの選択に対応していません。\n" +
+          "Chrome または Edge で開いてください。"
+        );
+        return;
+      }
 
-  directoryHandle = await window.showDirectoryPicker();
+      directoryHandle = await window.showDirectoryPicker();
 
-  await saveDirectoryHandle(directoryHandle);
+      await saveDirectoryHandle(directoryHandle);
 
-  folderName.textContent = `保存先：${directoryHandle.name}`;
-}
+      folderName.textContent = `保存先：${directoryHandle.name}`;
+    }
 
     function updateSelectedFile() {
       const file = fileInput.files[0];
@@ -238,16 +236,16 @@
       const diaryText = diaryInput.value.trim();
 
       if (!directoryHandle) {
-  alert("先に保存先フォルダを選んでください。");
-  return;
-}
+        alert("先に保存先フォルダを選んでください。");
+        return;
+      }
 
-const permission = await requestFolderPermission();
+      const permission = await requestFolderPermission();
 
-if (!permission) {
-  alert("保存先フォルダへの許可がありません。");
-  return;
-}
+      if (!permission) {
+        alert("保存先フォルダへの許可がありません。");
+        return;
+      }
 
       if (!file) {
         alert("捧げるファイルを選んでください。");
@@ -270,10 +268,10 @@ if (!permission) {
       try {
         const content = await file.text();
         const savedFileName =
-  await saveFileToFolder(
-    backupFileName,
-    content,
-  );
+          await saveFileToFolder(
+            backupFileName,
+            content,
+          );
 
         addHistory({
           diaryText,
@@ -289,9 +287,9 @@ if (!permission) {
         renderHistory();
 
         alert(
-  "ファイルを捧げました。\n\n" +
-  savedFileName,
-);
+          "ファイルを捧げました。\n\n" +
+          savedFileName,
+        );
       } catch (error) {
         alert("ファイルの保存に失敗しました。");
         console.error(error);
@@ -299,36 +297,36 @@ if (!permission) {
     }
 
     async function saveFileToFolder(fileName, content) {
-  let targetFileName = fileName;
-  let counter = 2;
+      let targetFileName = fileName;
+      let counter = 2;
 
-  while (await fileExists(targetFileName)) {
-    const dotIndex = fileName.lastIndexOf(".");
+      while (await fileExists(targetFileName)) {
+        const dotIndex = fileName.lastIndexOf(".");
 
-    if (dotIndex === -1) {
-      targetFileName = `${fileName}_${counter}`;
-    } else {
-      const name = fileName.slice(0, dotIndex);
-      const ext = fileName.slice(dotIndex);
+        if (dotIndex === -1) {
+          targetFileName = `${fileName}_${counter}`;
+        } else {
+          const name = fileName.slice(0, dotIndex);
+          const ext = fileName.slice(dotIndex);
 
-      targetFileName = `${name}_${counter}${ext}`;
+          targetFileName = `${name}_${counter}${ext}`;
+        }
+
+        counter++;
+      }
+
+      const fileHandle = await directoryHandle.getFileHandle(
+        targetFileName,
+        { create: true },
+      );
+
+      const writable = await fileHandle.createWritable();
+
+      await writable.write(content);
+      await writable.close();
+
+      return targetFileName;
     }
-
-    counter++;
-  }
-
-  const fileHandle = await directoryHandle.getFileHandle(
-    targetFileName,
-    { create: true },
-  );
-
-  const writable = await fileHandle.createWritable();
-
-  await writable.write(content);
-  await writable.close();
-
-  return targetFileName;
-}
 
     function createBackupFileName(originalName, diaryText, date) {
       const safeDiaryText = diaryText.replace(/[\\/:*?"<>|]/g, "");
@@ -355,16 +353,16 @@ if (!permission) {
     }
 
     function addHistory(item) {
-  const history = getHistory();
+      const history = getHistory();
 
-  history.unshift(item);
+      history.unshift(item);
 
-  if (history.length > 30) {
-    history.length = 30;
-  }
+      if (history.length > 30) {
+        history.length = 30;
+      }
 
-  setHistory(history);
-}
+      setHistory(history);
+    }
 
     function renderHistory() {
       const history = getHistory();
@@ -404,111 +402,112 @@ if (!permission) {
     }
 
     async function restoreSavedFolder() {
-  directoryHandle = await loadDirectoryHandle();
+      directoryHandle = await loadDirectoryHandle();
 
-  if (!directoryHandle) {
-    folderName.textContent = "保存先フォルダはまだ選ばれていません。";
-    return;
-  }
-
-  const permission = await directoryHandle.queryPermission({
-    mode: "readwrite",
-  });
-
-  if (permission === "granted") {
-    folderName.textContent = `保存先：${directoryHandle.name}`;
-    return;
-  }
-
-  folderName.textContent =
-    `保存先：${directoryHandle.name}（再許可が必要です）`;
-}
-
-async function requestFolderPermission() {
-  if (!directoryHandle) return false;
-
-  const currentPermission = await directoryHandle.queryPermission({
-    mode: "readwrite",
-  });
-
-  if (currentPermission === "granted") return true;
-
-  const requestedPermission = await directoryHandle.requestPermission({
-    mode: "readwrite",
-  });
-
-  return requestedPermission === "granted";
-}
-
-function openDatabase() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-    request.onupgradeneeded = () => {
-      const db = request.result;
-
-      if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+      if (!directoryHandle) {
+        folderName.textContent = "保存先フォルダはまだ選ばれていません。";
+        return;
       }
-    };
 
-    request.onsuccess = () => {
-      resolve(request.result);
-    };
+      const permission = await directoryHandle.queryPermission({
+        mode: "readwrite",
+      });
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-  });
-}
+      if (permission === "granted") {
+        folderName.textContent = `保存先：${directoryHandle.name}`;
+        return;
+      }
 
-async function saveDirectoryHandle(handle) {
-  const db = await openDatabase();
+      folderName.textContent =
+        `保存先：${directoryHandle.name}（再許可が必要です）`;
+    }
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readwrite");
-    const store = transaction.objectStore(STORE_NAME);
+    async function requestFolderPermission() {
+      if (!directoryHandle) return false;
 
-    const request = store.put(handle, DIRECTORY_HANDLE_KEY);
+      const currentPermission = await directoryHandle.queryPermission({
+        mode: "readwrite",
+      });
 
-    request.onsuccess = () => {
-      resolve();
-    };
+      if (currentPermission === "granted") return true;
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-  });
-}
+      const requestedPermission = await directoryHandle.requestPermission({
+        mode: "readwrite",
+      });
 
-async function loadDirectoryHandle() {
-  const db = await openDatabase();
+      return requestedPermission === "granted";
+    }
 
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction(STORE_NAME, "readonly");
-    const store = transaction.objectStore(STORE_NAME);
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-    const request = store.get(DIRECTORY_HANDLE_KEY);
+        request.onupgradeneeded = () => {
+          const db = request.result;
 
-    request.onsuccess = () => {
-      resolve(request.result || null);
-    };
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
 
-    request.onerror = () => {
-      reject(request.error);
-    };
-  });
-}
+        request.onsuccess = () => {
+          resolve(request.result);
+        };
 
-async function fileExists(fileName) {
-  try {
-    await directoryHandle.getFileHandle(fileName);
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    }
 
-    return true;
-  } catch {
-    return false;
-  }
-}
+    async function saveDirectoryHandle(handle) {
+      const db = await openDatabase();
+
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, "readwrite");
+        const store = transaction.objectStore(STORE_NAME);
+
+        const request = store.put(handle, DIRECTORY_HANDLE_KEY);
+
+        request.onsuccess = () => {
+          resolve();
+        };
+
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    }
+
+    async function loadDirectoryHandle() {
+      const db = await openDatabase();
+
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, "readonly");
+        const store = transaction.objectStore(STORE_NAME);
+
+        const request = store.get(DIRECTORY_HANDLE_KEY);
+
+        request.onsuccess = () => {
+          resolve(request.result || null);
+        };
+
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    }
+
+    async function fileExists(fileName) {
+      try {
+        await directoryHandle.getFileHandle(fileName);
+
+        return true;
+      } catch {
+        return false;
+      }
+    }
   </script>
 </body>
+
 </html>
