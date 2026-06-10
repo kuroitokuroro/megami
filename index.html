@@ -310,10 +310,16 @@
     }
 
     function addHistory(item) {
-      const history = getHistory();
-      history.unshift(item);
-      setHistory(history);
-    }
+  const history = getHistory();
+
+  history.unshift(item);
+
+  if (history.length > 30) {
+    history.length = 30;
+  }
+
+  setHistory(history);
+}
 
     function renderHistory() {
       const history = getHistory();
