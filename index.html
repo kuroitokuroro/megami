@@ -211,11 +211,17 @@
         return;
       }
 
-      directoryHandle = await window.showDirectoryPicker();
+      try {
+        directoryHandle = await window.showDirectoryPicker();
+        await saveDirectoryHandle(directoryHandle);
 
-      await saveDirectoryHandle(directoryHandle);
+        folderName.textContent = `保存先：${directoryHandle.name}`;
+      } catch (error) {
+        if (error.name === "AbortError") return;
 
-      folderName.textContent = `保存先：${directoryHandle.name}`;
+        alert("保存先フォルダの選択に失敗しました。");
+        console.error(error);
+      }
     }
 
     function updateSelectedFile() {
@@ -266,7 +272,7 @@
       );
 
       try {
-        const content = await file.text();
+        const content = await file.arrayBuffer();
         const savedFileName =
           await saveFileToFolder(
             backupFileName,
@@ -345,7 +351,26 @@
     }
 
     function getHistory() {
-      return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+      const savedHistory = localStorage.getItem(HISTORY_KEY);
+
+      if (!savedHistory) return [];
+
+      try {
+        const history = JSON.parse(savedHistory);
+
+        if (!Array.isArray(history)) {
+          throw new Error("履歴データが配列ではありません。");
+        }
+
+        return history;
+      } catch (error) {
+        alert(
+          "履歴データが壊れている可能性があります。\n" +
+          "バックアップ保存を止めました。"
+        );
+
+        throw error;
+      }
     }
 
     function setHistory(history) {
@@ -501,10 +526,13 @@
     async function fileExists(fileName) {
       try {
         await directoryHandle.getFileHandle(fileName);
-
         return true;
-      } catch {
-        return false;
+      } catch (error) {
+        if (error.name === "NotFoundError") {
+          return false;
+        }
+
+        throw error;
       }
     }
   </script>
