@@ -268,20 +268,20 @@
       const backupFileName = createBackupFileName(
         file.name,
         diaryText,
-        now,
+        now
       );
 
       try {
         const content = await file.arrayBuffer();
-        const savedFileName =
-          await saveFileToFolder(
-            backupFileName,
-            content,
-    );
-    
+
+        const savedFileName = await saveFileToFolder(
+          backupFileName,
+          content
+        );
+
         addHistory({
           diaryText,
-          backupFileName,
+          backupFileName: savedFileName,
           originalFileName: file.name,
           createdAt: now.toISOString(),
         });
@@ -294,7 +294,7 @@
 
         alert(
           "ファイルを捧げました。\n\n" +
-          savedFileName,
+          savedFileName
         );
       } catch (error) {
         alert("ファイルの保存に失敗しました。");
