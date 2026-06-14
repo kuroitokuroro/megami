@@ -277,13 +277,14 @@
           await saveFileToFolder(
             backupFileName,
             content,
-
+    );
+    
         addHistory({
           diaryText,
           backupFileName,
           originalFileName: file.name,
           createdAt: now.toISOString(),
-        }); );
+        });
 
         fileInput.value = "";
         diaryInput.value = "";
