@@ -153,7 +153,7 @@
         保存先フォルダはまだ選ばれていません。
       </div>
 
-      <input id="fileInput" type="file" />
+      <input id="fileInput" type="file" multiple />
 
       <div id="fileBox" class="file-box">
         <div class="file-box-main">ここを押してファイルを選択</div>
@@ -225,20 +225,28 @@
     }
 
     function updateSelectedFile() {
-      const file = fileInput.files[0];
+      const files = Array.from(fileInput.files);
 
-      if (!file) {
+      if (files.length === 0) {
         fileBox.classList.remove("selected");
         fileName.textContent = "どこを押しても選択できます";
         return;
       }
 
       fileBox.classList.add("selected");
-      fileName.textContent = file.name;
+
+      if (files.length === 1) {
+        fileName.textContent = files[0].name;
+        return;
+      }
+
+      fileName.textContent =
+        `${files.length}個のファイルを選択中：` +
+        files.map((file) => file.name).join(" / ");
     }
 
     async function offerFile() {
-      const file = fileInput.files[0];
+      const files = Array.from(fileInput.files);
       const diaryText = diaryInput.value.trim();
 
       if (!directoryHandle) {
@@ -253,7 +261,7 @@
         return;
       }
 
-      if (!file) {
+      if (files.length === 0) {
         alert("捧げるファイルを選んでください。");
         return;
       }
@@ -265,24 +273,30 @@
       }
 
       const now = new Date();
-      const backupFileName = createBackupFileName(
-        file.name,
-        diaryText,
-        now
-      );
+      const savedFileNames = [];
 
       try {
-        const content = await file.arrayBuffer();
+        for (const file of files) {
+          const backupFileName = createBackupFileName(
+            file.name,
+            diaryText,
+            now
+          );
 
-        const savedFileName = await saveFileToFolder(
-          backupFileName,
-          content
-        );
+          const content = await file.arrayBuffer();
+
+          const savedFileName = await saveFileToFolder(
+            backupFileName,
+            content
+          );
+
+          savedFileNames.push(savedFileName);
+        }
 
         addHistory({
           diaryText,
-          backupFileName: savedFileName,
-          originalFileName: file.name,
+          fileCount: savedFileNames.length,
+          fileNames: savedFileNames,
           createdAt: now.toISOString(),
         });
 
@@ -294,7 +308,7 @@
 
         alert(
           "ファイルを捧げました。\n\n" +
-          savedFileName
+          savedFileNames.join("\n")
         );
       } catch (error) {
         alert("ファイルの保存に失敗しました。");
@@ -333,7 +347,7 @@
 
       return targetFileName;
     }
-    
+
     function createBackupFileName(originalName, diaryText, date) {
       const safeDiaryText = diaryText.replace(/[\\/:*?"<>|]/g, "");
       const dateText = formatDateForFileName(date);
@@ -405,7 +419,12 @@
 
         const title = document.createElement("div");
         title.className = "history-title";
-        title.textContent = `${item.diaryText}　の開発前`;
+        const fileCount = item.fileCount || 1;
+
+        title.textContent =
+          fileCount === 1
+            ? `${item.diaryText}　の開発前`
+            : `${item.diaryText}　の開発前（${fileCount}ファイル）`;
 
         const date = document.createElement("div");
         date.className = "history-date";
