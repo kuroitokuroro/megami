@@ -4,53 +4,538 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" type="image/jpeg" href="favicon.jpg" />
-  <link rel="apple-touch-icon" href="favicon.jpg" />
+  <title>開発サポートめがみ</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="apple-touch-icon" href="favicon.png" />
 
-  <title>物体迷宮</title>
+  <style>
+    body {
+      max-width: 450px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: sans-serif;
+      background: #f7f7f7;
+      color: #222;
+    }
 
-  <link rel="stylesheet" href="style.css" />
+    h1 {
+      margin: 0 0 20px;
+      font-size: 30px;
+    }
+
+    section {
+      margin-bottom: 20px;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    h2 {
+      margin: 0;
+      padding: 12px;
+      background: #333;
+      color: white;
+      font-size: 16px;
+    }
+
+    .area {
+      padding: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    .folder-button,
+    .submit-button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      background: #333;
+      color: white;
+      font-size: 16px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .folder-name {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .file-box {
+      margin: 16px 0;
+      padding: 28px 12px;
+      border: 2px dashed #aaa;
+      border-radius: 12px;
+      background: #fafafa;
+      text-align: center;
+      cursor: pointer;
+      line-height: 1.7;
+    }
+
+    .file-box.selected {
+      border-color: #333;
+      background: #f0f0f0;
+    }
+
+    .file-box-main {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .file-box-sub {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #444;
+    }
+
+    input[type="text"] {
+      box-sizing: border-box;
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    .history-card {
+      padding: 14px 16px;
+      border-top: 1px solid #eee;
+    }
+
+    .history-title {
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .history-date {
+      margin-top: 8px;
+      text-align: right;
+      color: #666;
+      font-size: 13px;
+    }
+
+    .empty-message {
+      padding: 16px;
+      color: #666;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+  </style>
 </head>
 
 <body>
-  <main class="game-shell">
-    <section class="game-frame" aria-label="物体迷宮">
-      <div id="effectLayer" class="effect-layer" aria-hidden="true"></div>
-      <div class="top-row">
-        <div id="floorDisplay" class="floor-display">Ｆ１</div>
-        <div id="progressGauge" class="progress-gauge"></div>
+  <h1>開発サポートめがみ</h1>
+
+  <section>
+    <h2>開発日記をつける</h2>
+
+    <div class="area">
+      <button id="folderButton" class="folder-button" type="button">
+        保存先フォルダを選択
+      </button>
+
+      <div id="folderName" class="folder-name">
+        保存先フォルダはまだ選ばれていません。
       </div>
 
-      <div class="theme-row">
-        <span id="themeDisplay">冷蔵庫の階</span>
+      <input id="fileInput" type="file" />
+
+      <div id="fileBox" class="file-box">
+        <div class="file-box-main">ここを押してファイルを選択</div>
+        <div id="fileName" class="file-box-sub">
+          どこを押しても選択できます
+        </div>
       </div>
 
-      <section id="textWindow" class="text-window" aria-live="polite">
-        <p>物体迷宮に入った。</p>
-      </section>
+      <label for="diaryInput">何を開発する？</label>
+      <input id="diaryInput" type="text" maxlength="20" placeholder="例：習慣表示修正" />
 
-      <section class="move-actions" aria-label="移動操作">
-        <button id="forwardButton" type="button">進む</button>
-        <button id="backButton" type="button">戻る</button>
-      </section>
+      <button id="submitButton" class="submit-button" type="button">
+        ファイルを捧げる
+      </button>
+    </div>
+  </section>
 
-      <section class="battle-actions" aria-label="戦闘操作">
-        <button id="attackButton" type="button">こうげき</button>
-        <button id="magicButton" type="button">魔法</button>
-        <button id="escapeButton" type="button">逃げる</button>
-      </section>
+  <section>
+    <h2>過去に捧げたファイル</h2>
+    <div id="historyArea"></div>
+  </section>
 
-      <section class="menu-actions" aria-label="メニュー">
-        <button type="button" data-menu="能力">能力</button>
-        <button type="button" data-menu="アイテム">アイテム</button>
-        <button type="button" data-menu="装備">装備</button>
-        <button type="button" data-menu="スキル">スキル</button>
-        <button type="button" data-menu="設定">設定</button>
-      </section>
-    </section>
-  </main>
+  <script>
+    const HISTORY_KEY = "megamiHistory";
 
-  <script src="main.js"></script>
+    const folderButton = document.getElementById("folderButton");
+    const folderName = document.getElementById("folderName");
+    const fileInput = document.getElementById("fileInput");
+    const fileBox = document.getElementById("fileBox");
+    const fileName = document.getElementById("fileName");
+    const diaryInput = document.getElementById("diaryInput");
+    const submitButton = document.getElementById("submitButton");
+    const historyArea = document.getElementById("historyArea");
+    const DB_NAME = "megamiDatabase";
+    const DB_VERSION = 1;
+    const STORE_NAME = "settings";
+    const DIRECTORY_HANDLE_KEY = "directoryHandle";
+
+    let directoryHandle = null;
+
+    folderButton.addEventListener("click", selectFolder);
+    fileBox.addEventListener("click", () => fileInput.click());
+    fileInput.addEventListener("change", updateSelectedFile);
+    submitButton.addEventListener("click", offerFile);
+
+    restoreSavedFolder();
+    renderHistory();
+
+    async function selectFolder() {
+      if (!window.showDirectoryPicker) {
+        alert(
+          "このブラウザでは保存先フォルダの選択に対応していません。\n" +
+          "Chrome または Edge で開いてください。"
+        );
+        return;
+      }
+
+      try {
+        directoryHandle = await window.showDirectoryPicker();
+        await saveDirectoryHandle(directoryHandle);
+
+        folderName.textContent = `保存先：${directoryHandle.name}`;
+      } catch (error) {
+        if (error.name === "AbortError") return;
+
+        alert("保存先フォルダの選択に失敗しました。");
+        console.error(error);
+      }
+    }
+
+    function updateSelectedFile() {
+      const file = fileInput.files[0];
+
+      if (!file) {
+        fileBox.classList.remove("selected");
+        fileName.textContent = "どこを押しても選択できます";
+        return;
+      }
+
+      fileBox.classList.add("selected");
+      fileName.textContent = file.name;
+    }
+
+    async function offerFile() {
+      const file = fileInput.files[0];
+      const diaryText = diaryInput.value.trim();
+
+      if (!directoryHandle) {
+        alert("先に保存先フォルダを選んでください。");
+        return;
+      }
+
+      const permission = await requestFolderPermission();
+
+      if (!permission) {
+        alert("保存先フォルダへの許可がありません。");
+        return;
+      }
+
+      if (!file) {
+        alert("捧げるファイルを選んでください。");
+        return;
+      }
+
+      if (!diaryText) {
+        alert("開発の内容を書いてください。");
+        diaryInput.focus();
+        return;
+      }
+
+      const now = new Date();
+      const backupFileName = createBackupFileName(
+        file.name,
+        diaryText,
+        now
+      );
+
+      try {
+        const content = await file.arrayBuffer();
+
+        const savedFileName = await saveFileToFolder(
+          backupFileName,
+          content
+        );
+
+        addHistory({
+          diaryText,
+          backupFileName: savedFileName,
+          originalFileName: file.name,
+          createdAt: now.toISOString(),
+        });
+
+        fileInput.value = "";
+        diaryInput.value = "";
+        updateSelectedFile();
+        restoreSavedFolder();
+        renderHistory();
+
+        alert(
+          "ファイルを捧げました。\n\n" +
+          savedFileName
+        );
+      } catch (error) {
+        alert("ファイルの保存に失敗しました。");
+        console.error(error);
+      }
+    }
+
+    async function saveFileToFolder(fileName, content) {
+      let targetFileName = fileName;
+      let counter = 2;
+
+      while (await fileExists(targetFileName)) {
+        const dotIndex = fileName.lastIndexOf(".");
+
+        if (dotIndex === -1) {
+          targetFileName = `${fileName}_${counter}`;
+        } else {
+          const name = fileName.slice(0, dotIndex);
+          const ext = fileName.slice(dotIndex);
+
+          targetFileName = `${name}_${counter}${ext}`;
+        }
+
+        counter++;
+      }
+
+      const fileHandle = await directoryHandle.getFileHandle(
+        targetFileName,
+        { create: true },
+      );
+
+      const writable = await fileHandle.createWritable();
+
+      await writable.write(content);
+      await writable.close();
+
+      return targetFileName;
+    }
+    
+    function createBackupFileName(originalName, diaryText, date) {
+      const safeDiaryText = diaryText.replace(/[\\/:*?"<>|]/g, "");
+      const dateText = formatDateForFileName(date);
+
+      return `${dateText}_${safeDiaryText}_の開発前_${originalName}`;
+    }
+
+    function formatDateForFileName(date) {
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hour = String(date.getHours()).padStart(2, "0");
+      const minute = String(date.getMinutes()).padStart(2, "0");
+
+      return `${month}${day}_${hour}${minute}`;
+    }
+
+    function getHistory() {
+      const savedHistory = localStorage.getItem(HISTORY_KEY);
+
+      if (!savedHistory) return [];
+
+      try {
+        const history = JSON.parse(savedHistory);
+
+        if (!Array.isArray(history)) {
+          throw new Error("履歴データが配列ではありません。");
+        }
+
+        return history;
+      } catch (error) {
+        alert(
+          "履歴データが壊れている可能性があります。\n" +
+          "バックアップ保存を止めました。"
+        );
+
+        throw error;
+      }
+    }
+
+    function setHistory(history) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    }
+
+    function addHistory(item) {
+      const history = getHistory();
+
+      history.unshift(item);
+
+      if (history.length > 30) {
+        history.length = 30;
+      }
+
+      setHistory(history);
+    }
+
+    function renderHistory() {
+      const history = getHistory();
+      historyArea.innerHTML = "";
+
+      if (history.length === 0) {
+        historyArea.innerHTML =
+          `<div class="empty-message">まだ捧げられたファイルはありません。</div>`;
+        return;
+      }
+
+      history.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "history-card";
+
+        const title = document.createElement("div");
+        title.className = "history-title";
+        title.textContent = `${item.diaryText}　の開発前`;
+
+        const date = document.createElement("div");
+        date.className = "history-date";
+        date.textContent = formatDateForDisplay(new Date(item.createdAt));
+
+        card.appendChild(title);
+        card.appendChild(date);
+        historyArea.appendChild(card);
+      });
+    }
+
+    function formatDateForDisplay(date) {
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const hour = String(date.getHours()).padStart(2, "0");
+      const minute = String(date.getMinutes()).padStart(2, "0");
+
+      return `${month}/${day} ${hour}:${minute}`;
+    }
+
+    async function restoreSavedFolder() {
+      directoryHandle = await loadDirectoryHandle();
+
+      if (!directoryHandle) {
+        folderName.textContent = "保存先フォルダはまだ選ばれていません。";
+        return;
+      }
+
+      const permission = await directoryHandle.queryPermission({
+        mode: "readwrite",
+      });
+
+      if (permission === "granted") {
+        folderName.textContent = `保存先：${directoryHandle.name}`;
+        return;
+      }
+
+      folderName.textContent =
+        `保存先：${directoryHandle.name}（再許可が必要です）`;
+    }
+
+    async function requestFolderPermission() {
+      if (!directoryHandle) return false;
+
+      const currentPermission = await directoryHandle.queryPermission({
+        mode: "readwrite",
+      });
+
+      if (currentPermission === "granted") return true;
+
+      const requestedPermission = await directoryHandle.requestPermission({
+        mode: "readwrite",
+      });
+
+      return requestedPermission === "granted";
+    }
+
+    function openDatabase() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+        request.onupgradeneeded = () => {
+          const db = request.result;
+
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
+
+        request.onsuccess = () => {
+          resolve(request.result);
+        };
+
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    }
+
+    async function saveDirectoryHandle(handle) {
+      const db = await openDatabase();
+
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, "readwrite");
+        const store = transaction.objectStore(STORE_NAME);
+
+        const request = store.put(handle, DIRECTORY_HANDLE_KEY);
+
+        request.onsuccess = () => {
+          resolve();
+        };
+
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    }
+
+    async function loadDirectoryHandle() {
+      const db = await openDatabase();
+
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(STORE_NAME, "readonly");
+        const store = transaction.objectStore(STORE_NAME);
+
+        const request = store.get(DIRECTORY_HANDLE_KEY);
+
+        request.onsuccess = () => {
+          resolve(request.result || null);
+        };
+
+        request.onerror = () => {
+          reject(request.error);
+        };
+      });
+    }
+
+    async function fileExists(fileName) {
+      try {
+        await directoryHandle.getFileHandle(fileName);
+        return true;
+      } catch (error) {
+        if (error.name === "NotFoundError") {
+          return false;
+        }
+
+        throw error;
+      }
+    }
+  </script>
 </body>
 
 </html>
