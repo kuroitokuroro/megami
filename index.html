@@ -135,6 +135,44 @@
       line-height: 1.6;
       font-size: 14px;
     }
+
+    .submit-button:disabled {
+      cursor: wait;
+      opacity: 0.72;
+    }
+
+    .copy-status {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: #f0f0f0;
+      color: #333;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .copy-status.is-visible {
+      display: flex;
+    }
+
+    .copy-spinner {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      border: 3px solid #d0d0d0;
+      border-top-color: #333;
+      border-radius: 50%;
+      animation: copy-spin 0.85s linear infinite;
+    }
+
+    @keyframes copy-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 </head>
 
@@ -168,6 +206,11 @@
       <button id="submitButton" class="submit-button" type="button">
         ファイルを捧げる
       </button>
+
+      <div id="copyStatus" class="copy-status" role="status" aria-live="polite">
+        <span class="copy-spinner" aria-hidden="true"></span>
+        <span id="copyStatusText">複製中です。少しだけお待ちください。</span>
+      </div>
     </div>
   </section>
 
@@ -186,6 +229,8 @@
     const fileName = document.getElementById("fileName");
     const diaryInput = document.getElementById("diaryInput");
     const submitButton = document.getElementById("submitButton");
+    const copyStatus = document.getElementById("copyStatus");
+    const copyStatusText = document.getElementById("copyStatusText");
     const historyArea = document.getElementById("historyArea");
     const DB_NAME = "megamiDatabase";
     const DB_VERSION = 1;
@@ -193,6 +238,7 @@
     const DIRECTORY_HANDLE_KEY = "directoryHandle";
 
     let directoryHandle = null;
+    let isCopying = false;
 
     folderButton.addEventListener("click", selectFolder);
     fileBox.addEventListener("click", () => fileInput.click());
@@ -246,18 +292,13 @@
     }
 
     async function offerFile() {
+      if (isCopying) return;
+
       const files = Array.from(fileInput.files);
       const diaryText = diaryInput.value.trim();
 
       if (!directoryHandle) {
         alert("先に保存先フォルダを選んでください。");
-        return;
-      }
-
-      const permission = await requestFolderPermission();
-
-      if (!permission) {
-        alert("保存先フォルダへの許可がありません。");
         return;
       }
 
@@ -272,11 +313,23 @@
         return;
       }
 
+      const permission = await requestFolderPermission();
+
+      if (!permission) {
+        alert("保存先フォルダへの許可がありません。");
+        return;
+      }
+
       const now = new Date();
       const savedFileNames = [];
+      let historySaved = true;
 
       try {
-        for (const file of files) {
+        setCopying(true, `複製中です。0 / ${files.length} ファイル`);
+
+        for (const [index, file] of files.entries()) {
+          setCopying(true, `複製中です。${index + 1} / ${files.length} ファイル`);
+
           const backupFileName = createBackupFileName(
             file.name,
             diaryText,
@@ -292,28 +345,51 @@
 
           savedFileNames.push(savedFileName);
         }
+      } catch (error) {
+        alert("ファイルの保存に失敗しました。");
+        console.error(error);
+        return;
+      } finally {
+        setCopying(false);
+      }
 
+      try {
         addHistory({
           diaryText,
           fileCount: savedFileNames.length,
           fileNames: savedFileNames,
           createdAt: now.toISOString(),
         });
+      } catch (error) {
+        historySaved = false;
+        console.error(error);
+      }
 
-        fileInput.value = "";
-        diaryInput.value = "";
-        updateSelectedFile();
-        restoreSavedFolder();
-        renderHistory();
+      fileInput.value = "";
+      diaryInput.value = "";
+      updateSelectedFile();
+      restoreSavedFolder();
+      renderHistory();
 
+      if (historySaved) {
         alert(
           "ファイルを捧げました。\n\n" +
           savedFileNames.join("\n")
         );
-      } catch (error) {
-        alert("ファイルの保存に失敗しました。");
-        console.error(error);
+      } else {
+        alert(
+          "ファイルは保存できました。\n\n" +
+          "ただし、履歴データが壊れている可能性があるため、履歴には記録できませんでした。\n\n" +
+          savedFileNames.join("\n")
+        );
       }
+    }
+    
+    function setCopying(copying, message = "複製中です。少しだけお待ちください。") {
+      isCopying = copying;
+      submitButton.disabled = copying;
+      copyStatusText.textContent = message;
+      copyStatus.classList.toggle("is-visible", copying);
     }
 
     async function saveFileToFolder(fileName, content) {
